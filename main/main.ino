@@ -3,6 +3,7 @@
 #include "Configuration.h"
 #include "PressureManipulator.h"
 #include "Nextion.h"
+#include <math.h>
 
 InputReader reader1(PRESSURE_READER1);
 InputReader reader2(PRESSURE_READER2);
@@ -11,13 +12,13 @@ MemoryHelper memory1;
 MemoryHelper memory2;
 PressureManipulator manipulators[] = {PressureManipulator(RELAY_INCREASE_FRONT, RELAY_DECREASE_FRONT, reader1), PressureManipulator(RELAY_INCREASE_REAR, RELAY_DECREASE_REAR, reader2)};
 
-int displayCounter = 0;
-int displayDelay = 25;
 
 int odczyty[2];
-char _buffer[10];
+char _buffer1[5];
+char _buffer2[5];
+int odczyt[2];
 
-
+//Zmienne nextion z danymi funkcjami
 NexTouch *nex_listen_list[] = {
   &mem_1,
   &mem_2,
@@ -31,6 +32,7 @@ NexTouch *nex_listen_list[] = {
   &dec_car,
   NULL,
 };
+
 void setup() {
   nexInit();
   Serial.begin(9600);
@@ -45,6 +47,7 @@ void setup() {
 
   manipulators[0].Init();
   manipulators[1].Init();
+  
   memory1.RestoreFromStorageToPressureManipulators(manipulators);
   mem_1.attachPush(SaveValues1_PushCallback, &mem_1);
   mem_2.attachPush(SaveValues2_PushCallback, &mem_2);
@@ -72,30 +75,32 @@ void setup() {
 }
 
 void loop() {
+  //Inicjalizacja funkcji nextion
   nexLoop(nex_listen_list);  
-  DisplayCurrentPreassures();
-  delay(20);
+  
+  odczyty[0] = round(reader1.ReadAverageInput() / 64.0);
+  odczyty[1] = round(reader2.ReadAverageInput() / 64.0);
+ 
+  if(odczyty[0] != odczyt[0]){ 
+    odczyt[0] = odczyty[0];
+    MapToVolts(odczyty[0], _buffer1);
+    t1.setText(_buffer1);
+   }
+  else if (odczyty[1] != odczyt[1])
+   {
+    odczyt[1] = odczyty[1];
+    MapToVolts(odczyty[1], _buffer2);
+    t2.setText(_buffer2);
+   }
+   
+   delay(25);
 }
-void DisplayCurrentPreassures() {    
-  odczyty[0] = reader1.ReadAverageInput();
-  odczyty[1] = reader2.ReadAverageInput();
-  
-  ++displayCounter;
-  if(displayCounter > displayDelay)
-    displayCounter = 0;
-  if(displayCounter < displayDelay)
-    return;
-  
-  MapToVolts(odczyty[0], _buffer);
-  t1.setText(_buffer);
-  
-  MapToVolts(odczyty[1], _buffer);
-  t2.setText(_buffer);
-}
+
 void MapToVolts(int odczyt, char* _buffer) {
-  float value = odczyt  * (5.0 / 1024.0);
-  //4 is mininum width, 3 is precision; float value is copied onto buff
-  dtostrf(value, 4, 3, _buffer);
+  float value = odczyt  * (5.0 / 16.0);
+  //Funkcja wrzucająca float do tablicy wyników
+  //value to float, następnie jest długość znaków, pozniej ile znaków po przecinku, a pozniej tablica gdzie ma być wrzucone
+  dtostrf(value, 2, 1, _buffer);
 }
 
 
@@ -107,6 +112,7 @@ void SaveValues1_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory1.SaveToStorage(odczyty, manipulators);
+  Serial.print("Zapisz odczyt 1");
 }
 
 void SaveValues2_PushCallback(void*prt)
@@ -115,52 +121,62 @@ void SaveValues2_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory2.SaveToStorage(odczyty, manipulators);
+   Serial.print("Zapisz odczyt 2");
 }
 
 void RestoreValues1_PushCallback(void*prt)
 {
   memory1.RestoreFromStorageToPressureManipulators(manipulators);
+   Serial.print("Przywroc memory 1");
 }
 
 void RestoreValues2_PushCallback(void*prt)
 {
   memory2.RestoreFromStorageToPressureManipulators(manipulators);
+  Serial.print("Przywroc memory 2");
 }
 
 //Manual manipulations
 void IncreaseFront_PushCallback(void*prt)
 {
   manipulators[0].IncreaseValue();
+  Serial.print("Podnies przod");
 }
 
 void DecreaseFront_PushCallback(void*prt)
 {
   manipulators[0].DecreaseValue();
+  Serial.print("Obniz tyl");
 }
 
 void IncreaseRear_PushCallback(void*prt)
 {
   manipulators[1].IncreaseValue();
+   Serial.print("Podnies tyl");
 }
 
 void DecreaseRear_PushCallback(void*prt)
 {
   manipulators[1].DecreaseValue();
+  Serial.print("Obniz tyl");
 }
 
 void IncreaseCar_PushCallback(void*prt)
 {
   manipulators[0].IncreaseValue();
   manipulators[1].IncreaseValue();
+   Serial.print("Podnies auto");
 }
 
 void DecreaseCar_PushCallback(void*prt)
 {
   manipulators[1].DecreaseValue();
   manipulators[0].DecreaseValue();
+  Serial.print("Obniz auto");
 }
 
 void Manipulators_PopCallback(void*prt) {
   manipulators[0].StopManipulating();
   manipulators[1].StopManipulating();
+  Serial.print("Manipulators");
 }
