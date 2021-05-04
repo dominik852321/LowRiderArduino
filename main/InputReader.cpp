@@ -1,4 +1,6 @@
 #include "InputReader.h"
+#include <math.h>
+
 InputReader::InputReader(byte pin) {
   this->Pin = pin;
   this->Iteration = 0;
@@ -18,7 +20,7 @@ int InputReader::ReadAverageInput() {
   for (int i = 0; i < 10; i++) {
     sum += InputValues[i];
   }
-  return sum / 10;
+  return round(sum / 640.0);
 }
 
 int InputReader::ReadInput() {

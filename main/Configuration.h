@@ -19,11 +19,19 @@ extern int RelayDecrease;
 extern NexText t1;
 extern NexText t2;
 
+//Save values
+extern NexButton save_1;
+extern NexButton save_2;
+extern NexButton save_3;
+extern NexButton save_4;
+
+//Restore values
 extern NexDSButton mem_1;
 extern NexDSButton mem_2;
 extern NexDSButton mem_3;
 extern NexDSButton mem_4;
 
+//Change pressure
 extern NexButton inc_front;
 extern NexButton inc_rear;  
 extern NexButton inc_car;  
