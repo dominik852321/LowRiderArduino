@@ -40,10 +40,6 @@
 
 
 
-
-
-
-
 #ifdef DEBUG_SERIAL_ENABLE
 #define dbSerialPrint(a)    dbSerial.print(a)
 #define dbSerialPrintln(a)  dbSerial.println(a)

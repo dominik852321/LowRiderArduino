@@ -9,5 +9,6 @@ class MemoryHelper {
     MemoryHelper();
     void Init();
     void SaveToStorage(int values[], PressureManipulator manipulators[]);
+    String RestoreFromStorageValue(int value);
     void RestoreFromStorageToPressureManipulators(PressureManipulator manipulators[]);
 };

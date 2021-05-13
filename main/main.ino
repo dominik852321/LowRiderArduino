@@ -5,9 +5,12 @@
 #include "Nextion.h"
 
 
+
 InputReader reader1(PRESSURE_READER1);
 InputReader reader2(PRESSURE_READER2);
-InputReader readers[] = {reader1, reader2};
+InputReader reader3(PRESSURE_READER3);
+
+InputReader readers[] = {reader1, reader2, reader3};
 MemoryHelper memory1;
 MemoryHelper memory2;
 MemoryHelper memory3;
@@ -15,10 +18,10 @@ MemoryHelper memory4;
 PressureManipulator manipulators[] = {PressureManipulator(RELAY_INCREASE_FRONT, RELAY_DECREASE_FRONT, reader1), PressureManipulator(RELAY_INCREASE_REAR, RELAY_DECREASE_REAR, reader2)};
 
 
-int odczyty[2];
-char _buffer1[5];
-char _buffer2[5];
-int odczyt[2];
+int odczyty[3];
+int odczyt[3];
+
+bool displayOn = false;
 
 //Zmienne nextion z danymi funkcjami
 NexTouch *nex_listen_list[] = {
@@ -40,8 +43,8 @@ NexTouch *nex_listen_list[] = {
 };
 
 void setup() {
+  displayOn = nexInit();
   Serial.begin(9600);
-  nexInit();
   pinMode(4, OUTPUT);
   pinMode(5, OUTPUT);
   pinMode(6, OUTPUT);
@@ -57,9 +60,7 @@ void setup() {
 
   manipulators[0].Init();
   manipulators[1].Init();
-  
-  //Domyslnie przy właczaniu arduino ustaw na memory 1
-  memory1.RestoreFromStorageToPressureManipulators(manipulators);
+ 
 
   //Zapisz wartosci
   save_1.attachPop(SaveValues1_PushCallback, &save_1);
@@ -95,33 +96,62 @@ void setup() {
 }
 
 void loop() {
-  //Inicjalizacja funkcji nextion
-  nexLoop(nex_listen_list);  
-  
-  odczyty[0] = reader1.ReadAverageInput();
-  odczyty[1] = reader2.ReadAverageInput();
- 
-  if(odczyty[0] != odczyt[0]){ 
-    odczyt[0] = odczyty[0];
-    MapToVolts(odczyty[0], _buffer1);
-    t1.setText(_buffer1);
-   }
-  else if (odczyty[1] != odczyt[1])
-   {
-    odczyt[1] = odczyty[1];
-    MapToVolts(odczyty[1], _buffer2);
-    t2.setText(_buffer2);
-   }
-   
-   delay(25);
+      //Inicjalizacja funkcji nextion
+      nexLoop(nex_listen_list);  
+      
+      //Sprawdzenie polaczenia z wyswietlaczem
+      if(!displayOn){
+        bool  tryCon = nexInit();
+        if(tryCon){
+             delay(5000);
+             SetAllTxt();
+             displayOn = true;
+          }
+        else {
+            displayOn = false;
+          }
+      }  
+
+      odczyty[0] = reader1.ReadAverageInput();
+      odczyty[1] = reader2.ReadAverageInput();
+      odczyty[2] = reader3.ReadAverageInput();
+    
+      if(odczyty[0] != odczyt[0]){ 
+        odczyt[0] = odczyty[0];
+        setT0();
+      }
+      else if(odczyty[1] != odczyt[1]){
+        odczyt[1] = odczyty[1];
+        setT1();
+      } 
+     else if(odczyty[2] != odczyt[2]){
+        odczyt[2] = odczyty[2];
+        setValue();
+      }
+
+      //Zauwazylem ze po inicjalizacji danej strony jej pamiec juz zostaje
+      //Przy zmianie strony refreshuja sie dane
+      delay(25);   
 }
 
 //Mapuj odczyt na volty
-void MapToVolts(int odczyt, char* _buffer) {
-  float value = odczyt  * (5.0 / 16.0);
-  //Funkcja wrzucająca float do tablicy wyników
+void setT0() {
+  char bufer[3];
+  float value = odczyt[0]  * (5.0 / 16.0);
   //value to float, następnie jest długość znaków, pozniej ile znaków po przecinku, a pozniej tablica gdzie ma być wrzucone
-  dtostrf(value, 2, 1, _buffer);
+  dtostrf(value, 3, 2, bufer);
+  t0.setText(bufer);
+}
+
+void setT1(){
+   char bufer[3];
+   float value = odczyt[1]  * (5.0 / 16.0);
+   dtostrf(value, 3, 2, bufer);
+   t1.setText(bufer);
+  }
+
+void setValue() {
+   j0.setValue(odczyt[2] * 6.25);
 }
 
 
@@ -181,6 +211,7 @@ void SaveValues1_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory1.SaveToStorage(odczyty, manipulators);
+  SetAllTxt();
 }
 
 void SaveValues2_PushCallback(void*prt)
@@ -190,6 +221,7 @@ void SaveValues2_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory2.SaveToStorage(odczyty, manipulators);
+  SetAllTxt();
 }
 
 void SaveValues3_PushCallback(void*prt)
@@ -199,6 +231,7 @@ void SaveValues3_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory3.SaveToStorage(odczyty, manipulators);
+  SetAllTxt();
 }
 
 void SaveValues4_PushCallback(void*prt)
@@ -208,6 +241,7 @@ void SaveValues4_PushCallback(void*prt)
   odczyty[0] = reader1.ReadAverageInput();
   odczyty[1] = reader2.ReadAverageInput();
   memory4.SaveToStorage(odczyty, manipulators);
+  SetAllTxt();
 }
 
 //Manual manipulations
@@ -253,4 +287,34 @@ void Manipulators_PopCallback(void*prt) {
   manipulators[0].StopManipulating();
   manipulators[1].StopManipulating();
   Serial.println("Manipulators");
+}
+
+void SetAllTxt(){
+  char b[5];
+  
+  memory1.RestoreFromStorageValue(1).toCharArray(b,5);
+  t2.setText(b);
+  t2.setText(b);
+  
+  
+  memory1.RestoreFromStorageValue(2).toCharArray(b,5);
+  t3.setText(b);
+
+  memory2.RestoreFromStorageValue(1).toCharArray(b,5);
+  t4.setText(b);
+  
+  memory2.RestoreFromStorageValue(2).toCharArray(b,5);
+  t5.setText(b);
+  
+  memory3.RestoreFromStorageValue(1).toCharArray(b,5);
+  t6.setText(b);
+
+  memory3.RestoreFromStorageValue(2).toCharArray(b,5);
+  t7.setText(b);
+
+  memory4.RestoreFromStorageValue(1).toCharArray(b,5);
+  t8.setText(b);
+  
+  memory4.RestoreFromStorageValue(2).toCharArray(b,5);
+  t9.setText(b);
 }

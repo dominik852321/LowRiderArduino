@@ -4,6 +4,7 @@
 
 #define PRESSURE_READER1 A0
 #define PRESSURE_READER2 A1
+#define PRESSURE_READER3 A2
 
 #define RELAY_INCREASE_FRONT 4
 #define RELAY_DECREASE_FRONT 5
@@ -15,9 +16,23 @@ extern int NumberOfPressureSensors;
 //LOW = 0.
 extern int RelayIncrease;
 extern int RelayDecrease;
-//NEXTION BUTTONS
+
+//Nextion values on top
+extern NexText t0;
 extern NexText t1;
+
+
+extern NexProgressBar j0;
+
+//Nextion values on save memory
 extern NexText t2;
+extern NexText t3;
+extern NexText t4;
+extern NexText t5;
+extern NexText t6;
+extern NexText t7;
+extern NexText t8;
+extern NexText t9;
 
 //Save values
 extern NexButton save_1;

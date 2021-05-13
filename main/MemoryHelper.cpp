@@ -4,7 +4,7 @@
 MemoryHelper::MemoryHelper() {
   this->EepromStorage = Storage();
 }
-
+//Inicjalizacja i przypisanie do wyników na 3 stronie
 void MemoryHelper::Init() {
   this->EepromStorage.Init();
 }
@@ -17,6 +17,12 @@ void MemoryHelper::SaveToStorage(int values[], PressureManipulator manipulators[
     return;
 }
 
+//Pobierz jedną wartosc z eepromu value to numer czujnika
+String MemoryHelper::RestoreFromStorageValue(int value){
+  String storedValue = this->EepromStorage.GetStoredValue(value);
+  return storedValue;
+  }
+
 void MemoryHelper::RestoreFromStorageToPressureManipulators(PressureManipulator manipulators[]) {
   //wartosc ze storage wysylamy do manipulatora cisnienia
   
@@ -25,7 +31,7 @@ void MemoryHelper::RestoreFromStorageToPressureManipulators(PressureManipulator 
     for (int i = 0; i < NumberOfPressureSensors; i++) {
       manipulators[i].SetExpectedValue(storedValues[i]);
     }
-      for (int i = 0; i < NumberOfPressureSensors; i++) {
+    for (int i = 0; i < NumberOfPressureSensors; i++) {
       manipulators[i].Run();
     }
 }

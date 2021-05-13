@@ -8,6 +8,7 @@ class Storage {
     short StorageIndex;
     Storage();       
     void Init();
+    String GetStoredValue(int value);
     void GetStoredValues(int* values);    
     void StoreValues(int* values);
 };
